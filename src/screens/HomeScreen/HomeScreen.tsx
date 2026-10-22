@@ -1,6 +1,5 @@
-import React from 'react'
-import { View, Text } from 'react-native';
-import { globalStyles } from '../styles/theme';
+import { Text, View } from 'react-native';
+import { globalStyles } from '../../styles/theme';
 
 export const HomeScreen = () => {
     return (
