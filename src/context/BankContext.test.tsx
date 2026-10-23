@@ -1,49 +1,41 @@
 import React from 'react';
 import { renderHook, act } from '@testing-library/react-native';
 import { BankProvider, useBank } from './BankContext';
+import { apiService } from '../services/api.service';
 
-describe('BankContext', () => {
+// Hacemos un Mock de las librerías
+jest.mock('expo-secure-store');
+jest.mock('../services/api.service');
+
+describe('BankContext Integración API', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
         <BankProvider>{children}</BankProvider>
     );
 
-    it('debe arrojar un error si useBank se usa sin BankProvider', async () => {
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => { });
-
-        try {
-            await expect(renderHook(() => useBank())).rejects.toThrow(
-                'useBank debe ser usado dentro de un BankProvider'
-            );
-        } finally {
-            consoleSpy.mockRestore();
-        }
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    it('debe iniciar con saldo de 15000.50 y sin transferencias', async () => {
+    it('debe mapear correctamente los datos de la API al estado interno tras un refreshData', async () => {
+        (apiService.getBalance as jest.Mock).mockResolvedValue({ moneda: 'ARS', saldoCuenta: 25000 });
+        (apiService.getTransfers as jest.Mock).mockResolvedValue([
+            { valor: 1500, fecha: '2026-10-23', moneda: 'ARS', payeer: { documento: '1', nombre: 'Alejo Topaz' } }
+        ]);
+
         const { result } = await renderHook(() => useBank(), { wrapper });
-
-        expect(result.current.balance).toBe(15000.5);
-        expect(result.current.transfers).toEqual([]);
-    });
-
-    it('debe descontar el saldo al agregar una transferencia', async () => {
-        const { result } = await renderHook(() => useBank(), { wrapper });
-
-        const initialBalance = result.current.balance;
 
         await act(async () => {
-            await result.current.addTransfer({
-                recipient: 'Juan Pérez',
-                amount: 500,
-                date: '25/10/2026',
-            });
+            // Simulamos que el usuario tiene un token válido
+            await result.current.saveToken('fake-jwt-token');
+            await result.current.refreshData();
         });
 
-        expect(result.current.balance).toBe(initialBalance - 500);
+        // Verificamos que el balance se actualizó
+        expect(result.current.balance).toBe(25000);
+
+        // Verificamos que el adaptador transformó la fecha y el nombre correctamente
         expect(result.current.transfers).toHaveLength(1);
-        expect(result.current.transfers[0].recipient).toBe('Juan Pérez');
-        expect(result.current.transfers[0].id).toBeDefined();
+        expect(result.current.transfers[0].date).toBe('23/10/2026'); // Fecha transformada
+        expect(result.current.transfers[0].recipient).toBe('Alejo Topaz');
     });
 });

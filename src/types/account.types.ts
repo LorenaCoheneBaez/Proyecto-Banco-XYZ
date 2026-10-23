@@ -6,7 +6,11 @@ export interface Transfer {
 }
 
 export interface BankContextData {
+    token: string | null;
     balance: number;
-    transfers: Transfer[];
-    addTransfer: (transfer: Omit<Transfer, 'id'>) => void;
+    transfers: any[];
+    isLoading: boolean;
+    saveToken: (token: string) => Promise<void>;
+    logout: () => Promise<void>;
+    refreshData: () => Promise<void>;
 }

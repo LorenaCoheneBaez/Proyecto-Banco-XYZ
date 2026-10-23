@@ -1,39 +1,90 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { Transfer, BankContextData } from '../types/account.types';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import { apiService } from '../services/api.service';
+import { Transfer } from '../types/account.types';
 
-interface BankProviderProps {
-    children: ReactNode;
+interface BankContextData {
+    token: string | null;
+    balance: number;
+    transfers: Transfer[];
+    isLoading: boolean;
+    saveToken: (token: string) => Promise<void>;
+    logout: () => Promise<void>;
+    refreshData: () => Promise<void>;
 }
 
 const BankContext = createContext<BankContextData | undefined>(undefined);
+const TOKEN_KEY = 'jwt_bank_token';
 
-export const BankProvider: React.FC<BankProviderProps> = ({ children }) => {
-    const [balance, setBalance] = useState<number>(15000.50);
+export const BankProvider = ({ children }: { children: React.ReactNode }) => {
+    const [token, setToken] = useState<string | null>(null);
+    const [balance, setBalance] = useState<number>(0);
     const [transfers, setTransfers] = useState<Transfer[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const addTransfer = (transferData: Omit<Transfer, 'id'>) => {
-        const newTransfer: Transfer = {
-            ...transferData,
-            id: Math.random().toString(36).substring(2, 11),
+    useEffect(() => {
+        const loadToken = async () => {
+            try {
+                const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+                if (storedToken) setToken(storedToken);
+            } catch (error) {
+                console.error('Error leyendo token', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
+        loadToken();
+    }, []);
 
-        setTransfers((prevTransfers) => [newTransfer, ...prevTransfers]);
-        setBalance((prevBalance) => prevBalance - transferData.amount);
+    const saveToken = async (newToken: string) => {
+        await SecureStore.setItemAsync(TOKEN_KEY, newToken);
+        setToken(newToken);
+    };
+
+    const logout = async () => {
+        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        setToken(null);
+        setBalance(0);
+        setTransfers([]);
+    };
+
+    const refreshData = async () => {
+        if (!token) return;
+        setIsLoading(true);
+        try {
+            const balanceData = await apiService.getBalance(token);
+            setBalance(balanceData.saldoCuenta);
+
+            const historyData = await apiService.getTransfers(token);
+
+            const mappedTransfers: Transfer[] = historyData.map((t, index) => {
+                // Convertimos "YYYY-MM-DD" a "DD/MM/AAAA"
+                const [year, month, day] = t.fecha.split('-');
+                return {
+                    id: index.toString(),
+                    amount: t.valor,
+                    date: `${day}/${month}/${year}`,
+                    recipient: t.payeer.nombre || t.payeer.documento
+                };
+            });
+
+            setTransfers(mappedTransfers);
+        } catch (error) {
+            console.error('Error obteniendo datos de la API', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <BankContext.Provider value={{ balance, transfers, addTransfer }}>
+        <BankContext.Provider value={{ token, balance, transfers, isLoading, saveToken, logout, refreshData }}>
             {children}
         </BankContext.Provider>
     );
 };
 
-export const useBank = (): BankContextData => {
+export const useBank = () => {
     const context = useContext(BankContext);
-
-    if (context === undefined) {
-        throw new Error('useBank debe ser usado dentro de un BankProvider');
-    }
-
+    if (!context) throw new Error('useBank debe usarse dentro de BankProvider');
     return context;
 };

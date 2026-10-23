@@ -1,73 +1,57 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { LoginNavigationProp } from '../../types/navigation.types';
+import { apiService } from '../../services/api.service';
+import { useBank } from '../../context/BankContext';
 
-//Mock de datos para login
-const VALID_EMAIL = 'usuario@banco.com';
-const VALID_PASSWORD = 'password123';
+export const useLogin = (navigation: any) => {
+    const { saveToken, refreshData } = useBank();
 
-//Valido el formato del correo electrónico
-const validateEmailFormat = (text: string) => {
-    const emailRegex = /\S+@\S+\.\S+/;
-    return emailRegex.test(text);
-};
-
-export const useLogin = (navigation: LoginNavigationProp) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [authError, setAuthError] = useState('');
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-    const resetErrors = () => {
+    const clearErrors = () => {
         setEmailError('');
         setPasswordError('');
         setAuthError('');
     };
 
-    const validateAndLogin = () => {
-        resetErrors();
+    const validateAndLogin = async () => {
+        clearErrors();
         let isValid = true;
 
-        if (!email) {
-            setEmailError('El correo electrónico es requerido.');
+        if (!email.trim()) {
+            setEmailError('El correo es obligatorio');
             isValid = false;
-        } else if (!validateEmailFormat(email)) {
-            setEmailError('Ingresa un formato de correo válido.');
+        }
+        if (!password.trim()) {
+            setPasswordError('La contraseña es obligatoria');
             isValid = false;
         }
 
-        if (!password) {
-            setPasswordError('La contraseña es requerida.');
-            isValid = false;
-        }
+        if (!isValid) return;
 
-        if (isValid) {
-            if (email.toLowerCase() === VALID_EMAIL && password === VALID_PASSWORD) {
-                navigation.replace('Home');
-            } else {
-                setAuthError('Credenciales inválidas. Verifica tu correo y contraseña.');
-            }
+        setIsLoading(true);
+        try {
+            const data = await apiService.login(email.trim(), password);
+            await saveToken(data.token);
+            await refreshData();
+            navigation.replace('Home');
+        } catch (err) {
+            setAuthError('Credenciales inválidas. Verifica tus datos.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleForgotPassword = () => {
-        resetErrors();
-
-        if (!email) {
-            setEmailError('Ingresa tu correo para recuperar la contraseña.');
-            return;
-        }
-        if (!validateEmailFormat(email)) {
-            setEmailError('Ingresa un formato de correo válido (ej. usuario@banco.com).');
-            return;
-        }
-
-        Alert.alert(
-            'Recuperación de contraseña',
-            `Recibirás un enlace a ${email} con las instrucciones en breve.`,
-        );
+        Alert.alert('Recuperar contraseña', 'Contacte a soporte para restablecer su clave.');
     };
 
     return {
@@ -81,9 +65,11 @@ export const useLogin = (navigation: LoginNavigationProp) => {
         setPasswordError,
         authError,
         setAuthError,
+        isLoading,
         isPasswordVisible,
         setIsPasswordVisible,
         validateAndLogin,
         handleForgotPassword,
+        clearErrors,
     };
 };
