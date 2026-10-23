@@ -4,11 +4,13 @@ import { globalStyles } from '../../styles/theme.styles';
 import { styles } from './HistoryScreen.styles';
 import { useHistory } from './useHistory';
 import { getTodayArg, parseArgDate } from '../../utils/date.utils';
+import { formatCurrencyARS } from '../../utils/currency.utils';
 
 export const HistoryScreen = () => {
     const {
         filterName, setFilterName,
-        filterAmount, setFilterAmount,
+        filterAmount,
+        handleFilterAmountChange,
         filterDate, setFilterDate,
         filteredTransfers,
         isTotalEmpty,
@@ -48,7 +50,7 @@ export const HistoryScreen = () => {
                     placeholder="Monto"
                     keyboardType="decimal-pad"
                     value={filterAmount}
-                    onChangeText={setFilterAmount}
+                    onChangeText={handleFilterAmountChange}
                     editable={!isTotalEmpty}
                 />
                 <TextInput
@@ -87,7 +89,9 @@ export const HistoryScreen = () => {
                                     </View>
                                 ) : null}
                             </View>
-                            <Text style={styles.amount}>-${item.amount.toFixed(2)}</Text>
+                            <Text style={styles.amount}>
+                                {formatCurrencyARS(item.amount)}
+                            </Text>
                         </View>
                     );
                 }}

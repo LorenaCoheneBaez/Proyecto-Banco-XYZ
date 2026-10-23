@@ -66,7 +66,7 @@ export const useLogin = (navigation: LoginNavigationProp) => {
 
         Alert.alert(
             'Recuperación de contraseña',
-            'Recibirás un enlace con las instrucciones en breve.',
+            `Recibirás un enlace a ${email} con las instrucciones en breve.`,
         );
     };
 

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useBank } from '../../context/BankContext';
 import { useDebounce } from '../../hooks/useDebounce';
+import { normalizeAmountInput } from '../../utils/currency.utils';
 
 export const useHistory = () => {
     const { transfers } = useBank();
@@ -23,6 +24,10 @@ export const useHistory = () => {
         setFilterDate('');
     };
 
+    const handleFilterAmountChange = (text: string) => {
+        setFilterAmount(normalizeAmountInput(text));
+    };
+
     const filteredTransfers = useMemo(() => {
         return transfers.filter(transfer => {
             const matchName = transfer.recipient
@@ -30,7 +35,7 @@ export const useHistory = () => {
                 .includes(debouncedName.toLowerCase());
 
             const matchAmount = debouncedAmount
-                ? transfer.amount === parseFloat(debouncedAmount)
+                ? transfer.amount === parseFloat(debouncedAmount.replace(',', '.'))
                 : true;
 
             const matchDate = debouncedDate ? transfer.date.includes(debouncedDate) : true;
@@ -50,5 +55,6 @@ export const useHistory = () => {
         isTotalEmpty,
         hasActiveFilters,
         clearFilters,
+        handleFilterAmountChange,
     };
 };

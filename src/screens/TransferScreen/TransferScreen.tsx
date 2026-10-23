@@ -22,11 +22,12 @@ interface TransferScreenProps {
 export const TransferScreen = ({ navigation }: TransferScreenProps) => {
     const {
         recipient, setRecipient,
-        amount, setAmount,
+        amount,
         date, setDate,
         isScheduled, setIsScheduled,
         error,
         handleTransfer,
+        handleAmountChange
     } = useTransfer(navigation);
 
     return (
@@ -54,10 +55,10 @@ export const TransferScreen = ({ navigation }: TransferScreenProps) => {
                         <Text style={styles.label}>Monto a transferir</Text>
                         <TextInput
                             style={globalStyles.input}
-                            placeholder="$0.00"
+                            placeholder="$0,00"
                             keyboardType="decimal-pad"
                             value={amount}
-                            onChangeText={setAmount}
+                            onChangeText={handleAmountChange}
                         />
 
                         <View style={styles.switchContainer}>
