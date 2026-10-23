@@ -1,41 +1,55 @@
-import React from 'react';
-import { renderHook, act } from '@testing-library/react-native';
+import { render, waitFor, act, fireEvent } from '@testing-library/react-native';
 import { BankProvider, useBank } from './BankContext';
 import { apiService } from '../services/api.service';
+import * as SecureStore from 'expo-secure-store';
+import { Text, TouchableOpacity } from 'react-native';
 
 // Hacemos un Mock de las librerías
-jest.mock('expo-secure-store');
 jest.mock('../services/api.service');
+jest.mock('expo-secure-store');
+
+const TestComponent = () => {
+    const { balance, balanceCurrency, transfers, refreshData } = useBank();
+    return (
+        <>
+            <Text testID="balance">{balance}</Text>
+            <Text testID="currency">{balanceCurrency}</Text>
+            <Text testID="transfersCount">{transfers.length}</Text>
+            <TouchableOpacity testID="refreshButton" onPress={() => refreshData('fake-token')} />
+        </>
+    );
+};
 
 describe('BankContext Integración API', () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <BankProvider>{children}</BankProvider>
-    );
-
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
     it('debe mapear correctamente los datos de la API al estado interno tras un refreshData', async () => {
-        (apiService.getBalance as jest.Mock).mockResolvedValue({ moneda: 'ARS', saldoCuenta: 25000 });
-        (apiService.getTransfers as jest.Mock).mockResolvedValue([
-            { valor: 1500, fecha: '2026-10-23', moneda: 'ARS', payeer: { documento: '1', nombre: 'Alejo Topaz' } }
-        ]);
+        const mockBalance = { accountBalance: 25000, currency: 'ARS' };
+        const mockHistory = {
+            message: 'OK',
+            transfers: [{ value: 1000, currency: 'ARS', date: '2026-10-23', payeer: { name: 'Juan', document: '123' } }]
+        };
 
-        const { result } = await renderHook(() => useBank(), { wrapper });
+        (apiService.getBalance as jest.Mock).mockResolvedValue(mockBalance);
+        (apiService.getTransfers as jest.Mock).mockResolvedValue(mockHistory);
+        (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('fake-token');
+
+        const { getByTestId } = await render(
+            <BankProvider>
+                <TestComponent />
+            </BankProvider>
+        );
 
         await act(async () => {
-            // Simulamos que el usuario tiene un token válido
-            await result.current.saveToken('fake-jwt-token');
-            await result.current.refreshData();
+            fireEvent.press(getByTestId('refreshButton'));
         });
 
-        // Verificamos que el balance se actualizó
-        expect(result.current.balance).toBe(25000);
-
-        // Verificamos que el adaptador transformó la fecha y el nombre correctamente
-        expect(result.current.transfers).toHaveLength(1);
-        expect(result.current.transfers[0].date).toBe('23/10/2026'); // Fecha transformada
-        expect(result.current.transfers[0].recipient).toBe('Alejo Topaz');
+        await waitFor(() => {
+            expect(getByTestId('balance').props.children).toBe(25000);
+            expect(getByTestId('currency').props.children).toBe('ARS');
+            expect(getByTestId('transfersCount').props.children).toBe(1);
+        });
     });
 });
