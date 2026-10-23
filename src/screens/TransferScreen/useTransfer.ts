@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useBank } from '../../context/BankContext';
 import { TransferNavigationProp } from '../../types/navigation.types';
@@ -7,15 +7,19 @@ import { normalizeAmountInput, formatCurrencyARS } from '../../utils/currency.ut
 import { apiService } from '../../services/api.service';
 
 export const useTransfer = (navigation: TransferNavigationProp) => {
-    const { balance, token, refreshData } = useBank();
+    const { balance, balanceCurrency, token, refreshData } = useBank();
 
     const [recipient, setRecipient] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
-    const [currency, setCurrency] = useState<string>('ARS');
+
+    const [currency, setCurrency] = useState<string>(balanceCurrency || 'ARS');
+
+    useEffect(() => {
+        if (balanceCurrency) setCurrency(balanceCurrency);
+    }, [balanceCurrency]);
 
     const today = getTodayArg();
     const [date, setDate] = useState<string>(getTomorrowArg());
-
     const [isScheduled, setIsScheduled] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -40,8 +44,14 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
             return setError('El monto debe ser mayor a 0.');
         }
 
+        if (currency !== balanceCurrency) {
+            return setError(`Operación inválida. Tu cuenta opera en ${balanceCurrency}.`);
+        }
+
         if (numericAmount > balance) {
-            return setError(`Saldo insuficiente. Disponible: ${formatCurrencyARS(balance)}`);
+            return setError(
+                `Saldo insuficiente. Disponible: ${formatCurrencyARS(balance, balanceCurrency)}`,
+            );
         }
 
         setError('');
@@ -51,11 +61,10 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
             if (!isValidArgDate(finalDate)) {
                 return setError('Formato de fecha inválido. Use DD/MM/AAAA.');
             }
-            const selectedDateObj = parseArgDate(finalDate);
-            const currentDateObj = parseArgDate(today);
-
-            if (selectedDateObj <= currentDateObj) {
-                return setError('No puede programar transferencias para fechas pasadas.');
+            if (parseArgDate(finalDate) <= parseArgDate(today)) {
+                return setError(
+                    'No puede programar transferencias para fechas pasadas o para hoy.',
+                );
             }
         }
 
