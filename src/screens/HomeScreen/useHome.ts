@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { HomeNavigationProp } from '../../types/navigation.types';
+import { useBank } from '@/context/BankContext';
 
 export const useHome = (navigation: HomeNavigationProp) => {
     const goToAddTransfer = () => {
@@ -10,13 +11,18 @@ export const useHome = (navigation: HomeNavigationProp) => {
         navigation.navigate('History');
     };
 
-    const handleLogout = () => {
+    const { logout } = useBank();
+
+const handleLogout = () => {
         Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir de tu cuenta?', [
             { text: 'Cancelar', style: 'cancel' },
             {
                 text: 'Salir',
                 style: 'destructive',
-                onPress: () => navigation.replace('Login'),
+                onPress: async () => {
+                    await logout();
+                    navigation.replace('Login');
+                },
             },
         ]);
     };
