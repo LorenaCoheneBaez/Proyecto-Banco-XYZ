@@ -1,39 +1,38 @@
 # Proyecto Banco XYZ
 
-Aplicación de banca móvil desarrollada con React Native y Expo SDK 58. Integrada completamente con una API REST alojada en AWS para el manejo real de autenticación, saldos y transferencias.
+Aplicación de banca móvil desarrollada con React Native y Expo SDK 58. Consume una API REST alojada en AWS para autenticación, consulta de saldos y transferencias.
 
 ## Tecnologías
 
 - **React Native** y **React** para la interfaz de la aplicación.
 - **Expo SDK 58** para el entorno de desarrollo y ejecución multiplataforma.
 - **TypeScript** para el tipado estático del código.
-- **Expo Router** para la navegación basada en rutas.
+- **Expo Router** como punto de entrada de la aplicación y **React Navigation Native Stack** para navegar entre las pantallas.
 - **React Context API** para compartir el estado de la cuenta y las transferencias.
 - **Jest** y **React Native Testing Library** para las pruebas.
 - **ESLint** para el análisis estático del código.
 
-## Arquitectura y Justificación Técnica
+## Arquitectura e integración con la API
 
-### Mock-Driven Development (MDD)
-El desarrollo de esta aplicación comenzó aislando la lógica de negocio utilizando datos simulados (Mocks) locales antes de integrar la API real. Como desarrollador Semi-Senior, elegí este enfoque por las siguientes razones:
-*   **Desacoplamiento Front-Back:** Permitió avanzar con el diseño de interfaces y la lógica de validación sin depender de la disponibilidad o estabilidad de los endpoints en la nube.
-*   **Pruebas de Casos Extremos:** Facilitó la simulación de escenarios críticos (saldos insuficientes, listas vacías, errores de red) que son riesgosos o difíciles de replicar en un entorno de producción real.
-*   **Escalabilidad:** Gracias a la separación de responsabilidades usando Custom Hooks y Context API, la transición final a la API REST de AWS requirió modificar únicamente la capa de servicios, sin alterar los componentes visuales ni la experiencia del usuario.
+- Las solicitudes HTTP y las URL base se centralizan en `src/services/api.service.ts`. La aplicación usa `POST /login`, `GET /balance`, `POST /transfer` y `GET /transferList`.
+- El inicio de sesión envía `email` y `password`. El historial espera una respuesta con `transfers`; cada transferencia usa `value`, `date`, `currency` y `payeer`, que contiene `name` y `document`.
+- `BankContext` comparte el token, el saldo y el historial. Los hooks de las pantallas encapsulan parte de la lógica de presentación y validación.
+- Las pruebas automatizadas simulan las respuestas de la API y el almacenamiento seguro; no sustituyen la verificación de disponibilidad ni el contrato del backend real.
 
-### Seguridad y Variables de Entorno (`.env`)
-Los endpoints de la API están centralizados y protegidos de la base de código usando variables de entorno. 
-*   **¿Por qué usamos `.env`?** Permite cambiar fácilmente entre entornos (Desarrollo, Staging, Producción) sin modificar el código fuente. Aunque en aplicaciones cliente (frontend/móvil) las variables de entorno no brindan seguridad criptográfica absoluta, son una excelente práctica de arquitectura para no *hardcodear* (escribir en duro) URLs en el código.
-*   **Almacenamiento Seguro:** El Token JWT de sesión no se guarda en memoria volátil, sino que se almacena utilizando `expo-secure-store`, lo que garantiza que esté encriptado en el Keystore/Keychain del hardware del dispositivo.
+### Seguridad y variables de entorno (`.env`)
+Las URL base de la API se configuran mediante variables de entorno para no fijarlas en el código fuente. Como son variables `EXPO_PUBLIC_` de una aplicación cliente, sus valores pueden quedar incluidos en el paquete de la app: no deben contener secretos ni credenciales privadas.
+
+El token de sesión se almacena con `expo-secure-store`. Al cerrar sesión, la aplicación elimina el token almacenado y limpia el saldo y el historial del estado global.
 
 ### Buenas Prácticas
 Este proyecto fue diseñado siguiendo principios de Clean Code y separación de responsabilidades:
 - **Gestión de Estado:** Implementación de Context API (`BankContext`) para mantener una única fuente de verdad en el estado global (saldo y transferencias).
-- **Custom Hooks:** Toda la lógica de negocio y validaciones fue extraída de las vistas hacia hooks personalizados (`useLogin`, `useTransfer`, `useHistory`) para facilitar el testing aislado y mantener componentes limpios.
+- **Custom Hooks:** Parte de la lógica de las pantallas y sus validaciones está en hooks personalizados (`useLogin`, `useTransfer`, `useHistory`).
 - **Principio DRY:** Creación de utilidades globales (`currency.utils.ts`, `date.utils.ts`) para formateo de moneda y manejo de fechas.
 - **Rendimiento:** Implementación de `useDebounce` en el buscador del historial para optimizar los filtrados en tiempo real.
 
-## Credenciales de Prueba
-Para acceder a la aplicación, utiliza cualquiera de los siguientes usuarios:
+## Credenciales de prueba
+La autenticación se realiza contra la API configurada. Si estas cuentas están habilitadas en ese backend, puedes usar cualquiera de ellas:
 
 | Email | Contraseña | Nombre |
 | :--- | :--- | :--- |
@@ -43,9 +42,19 @@ Para acceder a la aplicación, utiliza cualquiera de los siguientes usuarios:
 
 
 ## Experiencia de Usuario (UX/UI)
-- **Internacionalización (ARS):** Sistema de inputs adaptado al usuario local. El usuario puede tipear decimales usando la coma (`,`) del teclado, mientras el sistema procesa los cálculos con punto (`.`) internamente sin romper el estado numérico.
-- Formato visual estricto para moneda argentina (ej. `$15.000,50`).
-- Validaciones preventivas (bloqueo de transferencias sin fondos, prevención de fechas pasadas, control de decimales).
+- **Monedas:** La interfaz formatea y muestra los importes en ARS o USD según la moneda recibida.
+
+- **Entrada de importes:** El usuario puede escribir decimales con coma; la aplicación normaliza el valor antes de procesar los cálculos.
+
+- Prevención de Errores en Fechas: Se agregó un Switch (interruptor) explícito para habilitar la programación de transferencias a futuro. Esto asegura que el usuario no envíe transferencias diferidas por accidente al tocar el campo de fecha.
+
+- Diferenciación Visual de Transferencias: Las transferencias programadas a futuro se muestran con una interfaz diferenciada (etiquetas y estilos propios) en la lista del historial, permitiendo una rápida lectura del estado de la cuenta.
+
+- Filtros Dinámicos e Inteligentes: Desactivación automática de los inputs de búsqueda en el historial cuando no hay transferencias registradas, evitando interacciones innecesarias y confusión.
+
+- Simulación de Recuperación de Clave: Se incorporó el botón y la alerta de "Olvidé mi contraseña" en el Login. Aunque no hay un endpoint real para esto, se incluyó para ofrecer una experiencia de usuario completa y realista desde el inicio.
+
+- Validaciones Preventivas: Bloqueo de transferencias sin fondos o con moneda incorrecta, prevención de fechas pasadas, y control de formato de correo (Regex).
 
 ## Requisitos
 
@@ -54,10 +63,10 @@ Para acceder a la aplicación, utiliza cualquiera de los siguientes usuarios:
 
 ## Instalación
 
-Clona el repositorio y entra en la carpeta creada:
+Clona el repositorio en la carpeta `ProyectoBancoXYZ`:
 
 ```bash
-git clone https://github.com/LorenaCoheneBaez/Proyecto-Banco-XYZ.git
+git clone https://github.com/LorenaCoheneBaez/Proyecto-Banco-XYZ.git ProyectoBancoXYZ
 cd ProyectoBancoXYZ
 ```
 
@@ -67,14 +76,20 @@ Instala las dependencias del proyecto:
 npm install
 ```
 
-## Configurar Variables de Entorno:**
-En la raíz del proyecto, debes crear un archivo `.env` tomando como base el archivo `.env.example`. Este paso es obligatorio para que la app se comunique con AWS.
-Crea el archivo `.env` y agrega lo siguiente:
-```env
-EXPO_PUBLIC_API_URL=https://qf5k9fspl0.execute-api.us-east-1.amazonaws.com/default
-EXPO_PUBLIC_API_BALANCE=https://2k0ic4z7s5.execute-api.us-east-1.amazonaws.com/default
-EXPO_PUBLIC_API_TRANSFER=https://ofqx4zxgcf.execute-api.us-east-1.amazonaws.com/default
-EXPO_PUBLIC_API_TRANSFER_LIST=https://n0qaa2fx3c.execute-api.us-east-1.amazonaws.com/default
+## Configurar variables de entorno
+En la raíz del proyecto, copia `.env.example` a `.env` y reemplaza las URL de ejemplo por las URL base de los servicios de API que vayas a usar. La aplicación añade a cada URL la ruta indicada:
+
+| Variable | Ruta usada |
+| :--- | :--- |
+| `EXPO_PUBLIC_API_URL` | `/login` |
+| `EXPO_PUBLIC_API_BALANCE` | `/balance` |
+| `EXPO_PUBLIC_API_TRANSFER` | `/transfer` |
+| `EXPO_PUBLIC_API_TRANSFER_LIST` | `/transferList` |
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 ## Ejecutar la aplicación
@@ -86,7 +101,7 @@ npm run start
 ```
 
 ## Pruebas (Testing)
-El proyecto cuenta con una suite de pruebas unitarias robusta enfocada en la lógica de negocio usando Jest y React Native Testing Library.
+Hay pruebas automatizadas con Jest y React Native Testing Library para el servicio de API, el contexto de cuenta y las utilidades de fechas.
 
 Ejecutar todas las pruebas:
 ```bash
@@ -96,7 +111,6 @@ npm test
 ## Lint
 
 Para revisar el código con ESLint:
-
 ```bash
 npm run lint
 ```
