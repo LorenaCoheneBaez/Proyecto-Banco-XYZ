@@ -3,7 +3,6 @@ import { View, Text, TextInput, FlatList, TouchableOpacity, Keyboard } from 'rea
 import { globalStyles } from '../../styles/theme.styles';
 import { styles } from './HistoryScreen.styles';
 import { useHistory } from './useHistory';
-import { getTodayArg, parseArgDate } from '../../utils/date.utils';
 import { formatCurrencyARS } from '../../utils/currency.utils';
 
 export const HistoryScreen = () => {
@@ -18,12 +17,12 @@ export const HistoryScreen = () => {
         clearFilters
     } = useHistory();
 
-    const todayObj = parseArgDate(getTodayArg()).getTime();
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
 
     return (
         <View style={globalStyles.container}>
             <View style={styles.filtersContainer}>
-
                 <View style={styles.headerFilters}>
                     <Text style={[styles.filterTitle, { marginBottom: 0 }]}>Filtros de Búsqueda</Text>
 
@@ -40,7 +39,7 @@ export const HistoryScreen = () => {
 
                 <TextInput
                     style={[globalStyles.input, styles.inputSmall, isTotalEmpty ? styles.disabledInput : null]}
-                    placeholder="Destinatario"
+                    placeholder="Destinatario o Doc"
                     value={filterName}
                     onChangeText={setFilterName}
                     editable={!isTotalEmpty}
@@ -64,7 +63,7 @@ export const HistoryScreen = () => {
 
             <FlatList
                 data={filteredTransfers}
-                keyExtractor={item => item.id}
+                keyExtractor={(_, index) => index.toString()} // La API no trae ID, usamos el índice
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                     <Text style={styles.emptyText}>
@@ -72,15 +71,29 @@ export const HistoryScreen = () => {
                     </Text>
                 }
                 renderItem={({ item }) => {
-                    // Convertimos la fecha de la transacción a timestamp
-                    const itemDateObj = parseArgDate(item.date).getTime();
-                    const isScheduled = itemDateObj > todayObj;
+                    const itemDateObj = new Date(`${item.date}T00:00:00`).getTime();
+                    const isScheduled = itemDateObj > todayObj.getTime();
+
+                    const [year, month, day] = item.date.split('-');
+                    const displayDate = `${day}/${month}/${year}`;
+
+                    const displayName = item.payeer?.name || 'Desconocido';
+                    // Verificamos si la API envió un documento
+                    const document = item.payeer?.document;
 
                     return (
                         <View style={[styles.itemCard, isScheduled ? styles.itemCardScheduled : null]}>
                             <View>
-                                <Text style={styles.recipient}>{item.recipient}</Text>
-                                <Text style={styles.date}>{item.date}</Text>
+                                <Text style={styles.recipient}>{displayName}</Text>
+
+                                {/* Si viene el documento se muestra*/}
+                                {document ? (
+                                    <Text style={{ fontSize: 13, color: '#666', marginTop: 2, marginBottom: 2 }}>
+                                        Doc: {document}
+                                    </Text>
+                                ) : null}
+
+                                <Text style={styles.date}>{displayDate}</Text>
 
                                 {/* Mostramos una insignia si la transferencia está programada */}
                                 {isScheduled ? (
@@ -90,7 +103,7 @@ export const HistoryScreen = () => {
                                 ) : null}
                             </View>
                             <Text style={styles.amount}>
-                                {formatCurrencyARS(item.amount)}
+                                {formatCurrencyARS(item.value, item.currency)}
                             </Text>
                         </View>
                     );
