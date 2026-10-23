@@ -1,5 +1,5 @@
-import { StyleSheet } from "react-native";
-import { colors } from "../../styles/colors";
+import { StyleSheet } from 'react-native';
+import { colors } from '../../styles/colors.styles';
 
 export const styles = StyleSheet.create({
     centered: {

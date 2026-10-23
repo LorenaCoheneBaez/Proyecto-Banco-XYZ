@@ -1,16 +1,15 @@
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
-  View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { globalStyles } from '../../styles/theme';
+import { globalStyles } from '../../styles/theme.styles';
 import { styles } from './LoginScreen.styles';
 import { useLogin } from './useLogin';
 

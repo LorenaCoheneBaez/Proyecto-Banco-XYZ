@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { LoginNavigationProp } from '../../types/navigation';
+import { LoginNavigationProp } from '../../types/navigation.types';
 
 //Mock de datos para login
 const VALID_EMAIL = 'usuario@banco.com';
