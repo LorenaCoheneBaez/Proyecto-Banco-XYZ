@@ -9,7 +9,7 @@ export const getTodayArg = (): string => {
 
 export const getTomorrowArg = (): string => {
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1); // JavaScript maneja los saltos de mes automáticamente
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     const day = String(tomorrow.getDate()).padStart(2, '0');
     const month = String(tomorrow.getMonth() + 1).padStart(2, '0');

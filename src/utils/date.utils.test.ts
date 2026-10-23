@@ -11,7 +11,7 @@ describe('Date Utils - date.utils.ts', () => {
             expect(isValidArgDate('32/01/2026')).toBe(false); // Día inexistente
             expect(isValidArgDate('2026-10-22')).toBe(false); // Formato ISO no admitido
             expect(isValidArgDate('22-10-2026')).toBe(false); // Uso de guiones
-            expect(isValidArgDate('texto')).toBe(false); // Basura
+            expect(isValidArgDate('texto')).toBe(false);
         });
     });
 
@@ -20,7 +20,7 @@ describe('Date Utils - date.utils.ts', () => {
             const result = parseArgDate('25/12/2026');
 
             expect(result.getFullYear()).toBe(2026);
-            expect(result.getMonth()).toBe(11); // En JS los meses van de 0 a 11 (Diciembre = 11)
+            expect(result.getMonth()).toBe(11);
             expect(result.getDate()).toBe(25);
         });
     });
