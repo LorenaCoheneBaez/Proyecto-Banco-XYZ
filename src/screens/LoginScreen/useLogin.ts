@@ -26,10 +26,17 @@ export const useLogin = (navigation: any) => {
         clearErrors();
         let isValid = true;
 
+        // Expresión regular para validar formato
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
         if (!email.trim()) {
             setEmailError('El correo es obligatorio');
             isValid = false;
+        } else if (!emailRegex.test(email.trim())) {
+            setEmailError('Ingresa un correo electrónico válido');
+            isValid = false;
         }
+
         if (!password.trim()) {
             setPasswordError('La contraseña es obligatoria');
             isValid = false;

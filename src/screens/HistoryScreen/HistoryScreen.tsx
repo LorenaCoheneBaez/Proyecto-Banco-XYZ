@@ -39,7 +39,7 @@ export const HistoryScreen = () => {
 
                 <TextInput
                     style={[globalStyles.input, styles.inputSmall, isTotalEmpty ? styles.disabledInput : null]}
-                    placeholder="Destinatario o Doc"
+                    placeholder="Destinatario o Documento"
                     value={filterName}
                     onChangeText={setFilterName}
                     editable={!isTotalEmpty}
@@ -89,7 +89,7 @@ export const HistoryScreen = () => {
                                 {/* Si viene el documento se muestra*/}
                                 {document ? (
                                     <Text style={{ fontSize: 13, color: '#666', marginTop: 2, marginBottom: 2 }}>
-                                        Doc: {document}
+                                        Documento: {document}
                                     </Text>
                                 ) : null}
 
