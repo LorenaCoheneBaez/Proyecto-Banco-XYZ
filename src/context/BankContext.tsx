@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { apiService } from '../services/api.service';
 import { BankContextData, TransferItem } from '@/types/account.types';
 
@@ -25,7 +25,7 @@ export const BankProvider = ({ children }: { children: React.ReactNode }) => {
         setTransfers([]);
     };
 
-    const refreshData = async (currentToken?: string) => {
+    const refreshData = useCallback(async (currentToken?: string) => {
         const activeToken = currentToken || token;
         if (!activeToken) return;
 
@@ -42,7 +42,7 @@ export const BankProvider = ({ children }: { children: React.ReactNode }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [token]);
 
     useEffect(() => {
         const loadToken = async () => {
@@ -59,6 +59,7 @@ export const BankProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
         loadToken();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

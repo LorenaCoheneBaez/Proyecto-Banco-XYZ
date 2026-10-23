@@ -5,7 +5,7 @@ import { normalizeAmountInput } from '../../utils/currency.utils';
 
 export const useHistory = () => {
     const { transfers } = useBank();
-    const safeTransfers = Array.isArray(transfers) ? transfers : [];
+    const safeTransfers = useMemo(() => (Array.isArray(transfers) ? transfers : []), [transfers]);
 
     const [filterName, setFilterName] = useState<string>('');
     const [filterAmount, setFilterAmount] = useState<string>('');

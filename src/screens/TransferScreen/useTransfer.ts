@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { Alert } from 'react-native';
 import { useBank } from '../../context/BankContext';
 import { TransferNavigationProp } from '../../types/navigation.types';
@@ -13,10 +13,14 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
     const [amount, setAmount] = useState<string>('');
 
     const [currency, setCurrency] = useState<string>(balanceCurrency || 'ARS');
+    const [prevBalanceCurrency, setPrevBalanceCurrency] = useState<string>(
+        balanceCurrency || 'ARS',
+    );
 
-    useEffect(() => {
-        if (balanceCurrency) setCurrency(balanceCurrency);
-    }, [balanceCurrency]);
+    if (balanceCurrency && balanceCurrency !== prevBalanceCurrency) {
+        setCurrency(balanceCurrency);
+        setPrevBalanceCurrency(balanceCurrency);
+    }
 
     const today = getTodayArg();
     const [date, setDate] = useState<string>(getTomorrowArg());
@@ -92,7 +96,7 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
             Alert.alert('Operación Exitosa', message, [
                 { text: 'OK', onPress: () => navigation.goBack() },
             ]);
-        } catch (err) {
+        } catch {
             setError('Ocurrió un error al procesar la transferencia.');
         } finally {
             setIsLoading(false);

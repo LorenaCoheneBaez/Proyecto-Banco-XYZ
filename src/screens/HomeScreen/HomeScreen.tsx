@@ -2,7 +2,6 @@ import { useCallback, useLayoutEffect } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useBank } from '../../context/BankContext';
-import { useBalanceCard } from '../../components/BalanceCard/useBalanceCard';
 import {styles} from './HomeScreen.styles'
 import { Ionicons } from '@expo/vector-icons';
 import { globalStyles } from '../../styles/theme.styles';
@@ -33,7 +32,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     useFocusEffect(
         useCallback(() => {
             refreshData();
-        }, [])
+        }, [refreshData])
     );
 
     return (

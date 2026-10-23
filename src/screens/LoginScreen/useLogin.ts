@@ -50,7 +50,7 @@ export const useLogin = (navigation: any) => {
             await saveToken(data.token);
             await refreshData();
             navigation.replace('Home');
-        } catch (err) {
+        } catch {
             setAuthError('Credenciales inválidas. Verifica tus datos.');
         } finally {
             setIsLoading(false);
