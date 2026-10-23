@@ -66,7 +66,7 @@ La autenticación se realiza contra la API configurada. Si estas cuentas están 
 Clona el repositorio en la carpeta `ProyectoBancoXYZ`:
 
 ```bash
-git clone https://github.com/LorenaCoheneBaez/Proyecto-Banco-XYZ.git ProyectoBancoXYZ
+git clone https://github.com/LorenaCoheneBaez/Proyecto-Banco-XYZ.git
 cd ProyectoBancoXYZ
 ```
 
