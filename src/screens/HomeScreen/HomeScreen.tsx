@@ -16,6 +16,22 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     return (
         <View style={globalStyles.container}>
             <BalanceCard />
+
+            <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                    style={globalStyles.button}
+                    onPress={goToAddTransfer}
+                >
+                    <Text style={globalStyles.buttonText}>Realizar Transferencia</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[globalStyles.button, styles.secondaryButton]}
+                    onPress={goToHistory}
+                >
+                    <Text style={globalStyles.buttonText}>Ver Movimientos</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
