@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { HomeNavigationProp } from '../../types/navigation.types';
 
 export const useHome = (navigation: HomeNavigationProp) => {
@@ -9,5 +10,16 @@ export const useHome = (navigation: HomeNavigationProp) => {
         navigation.navigate('History');
     };
 
-    return { goToAddTransfer, goToHistory };
+    const handleLogout = () => {
+        Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir de tu cuenta?', [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+                text: 'Salir',
+                style: 'destructive',
+                onPress: () => navigation.replace('Login'),
+            },
+        ]);
+    };
+
+    return { goToAddTransfer, goToHistory, handleLogout };
 };
