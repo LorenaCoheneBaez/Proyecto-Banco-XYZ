@@ -1,10 +1,12 @@
 import { useBank } from '../../context/BankContext';
+import { formatCurrencyARS } from '../../utils/currency.utils';
 
 export const useBalanceCard = () => {
-    const { balance } = useBank();
+    const { balance, isLoading } = useBank();
 
-    
     return {
-        balance: balance,
+        balance,
+        formattedBalance: formatCurrencyARS(balance),
+        isLoading,
     };
 };

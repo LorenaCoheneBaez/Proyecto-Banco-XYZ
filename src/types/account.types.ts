@@ -1,16 +1,25 @@
-export interface Transfer {
-    id: string;
-    recipient: string;
-    amount: number;
-    date: string; // Formato YYYY-MM-DD
+export interface TransferItem {
+    value: number;
+    date: string;
+    currency: string;
+    payeer: {
+        document: string;
+        name: string;
+    };
+}
+
+export interface TransferListResponse {
+    message: string;
+    transfers: TransferItem[];
 }
 
 export interface BankContextData {
     token: string | null;
     balance: number;
-    transfers: any[];
+    balanceCurrency: string; 
+    transfers: TransferItem[]; 
     isLoading: boolean;
     saveToken: (token: string) => Promise<void>;
     logout: () => Promise<void>;
-    refreshData: () => Promise<void>;
+    refreshData: (currentToken?: string) => Promise<void>;
 }

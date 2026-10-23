@@ -3,7 +3,7 @@ import {
     BalanceResponse,
     TransferPayload,
     TransferResponse,
-    TransferItem,
+    TransferListResponse,
 } from '../types/api.types';
 
 const BASE_URL_LOGIN = process.env.EXPO_PUBLIC_API_URL;
@@ -46,7 +46,7 @@ export const apiService = {
         return response.json();
     },
 
-    getTransfers: async (token: string): Promise<TransferItem[]> => {
+    getTransfers: async (token: string): Promise<TransferListResponse> => {
         const response = await fetch(`${BASE_URL_TRANSFER_LIST}/transferList`, {
             headers: { Authorization: `Bearer ${token}` },
         });

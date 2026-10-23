@@ -1,8 +1,12 @@
-export const formatCurrencyARS = (amount: number): string => {
-    const [integer, decimal] = amount.toFixed(2).split('.');
+export const formatCurrencyARS = (amount: number, currency: string = 'ARS'): string => {
+    const validAmount = Number(amount) || 0;
+
+    const [integer, decimal] = validAmount.toFixed(2).split('.');
     // Agrega puntos a los miles
     const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `$${formattedInteger},${decimal}`;
+    const symbol = currency === 'USD' ? 'u$s ' : '$';
+
+    return `${symbol}${formattedInteger},${decimal}`;
 };
 
 export const normalizeAmountInput = (text: string): string => {

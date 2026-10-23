@@ -8,8 +8,8 @@ export interface LoginResponse {
 }
 
 export interface BalanceResponse {
-    moneda: string;
-    saldoCuenta: number;
+    currency: string;
+    accountBalance: number;
 }
 
 export interface TransferPayload {
@@ -22,13 +22,18 @@ export interface TransferPayload {
 export interface TransferResponse {
     estado: string;
 }
-
 export interface TransferItem {
-    valor: number;
-    fecha: string;
-    moneda: string;
+    value: number;
+    date: string;
+    currency: string;
     payeer: {
-        documento: string;
-        nombre: string;
+        document: string;
+        name: string;
     };
+}
+
+
+export interface TransferListResponse {
+    message: string;
+    transfers: TransferItem[];
 }

@@ -5,6 +5,7 @@ import { normalizeAmountInput } from '../../utils/currency.utils';
 
 export const useHistory = () => {
     const { transfers } = useBank();
+    const safeTransfers = Array.isArray(transfers) ? transfers : [];
 
     const [filterName, setFilterName] = useState<string>('');
     const [filterAmount, setFilterAmount] = useState<string>('');
@@ -14,8 +15,7 @@ export const useHistory = () => {
     const debouncedAmount = useDebounce(filterAmount, 500);
     const debouncedDate = useDebounce(filterDate, 500);
 
-    const isTotalEmpty = transfers.length === 0;
-
+    const isTotalEmpty = safeTransfers.length === 0;
     const hasActiveFilters = filterName !== '' || filterAmount !== '' || filterDate !== '';
 
     const clearFilters = () => {
@@ -29,20 +29,25 @@ export const useHistory = () => {
     };
 
     const filteredTransfers = useMemo(() => {
-        return transfers.filter(transfer => {
-            const matchName = transfer.recipient
-                .toLowerCase()
-                .includes(debouncedName.toLowerCase());
+        return safeTransfers.filter(transfer => {
+            const nameText = transfer?.payeer?.name || '';
+            const docText = transfer?.payeer?.document || '';
 
-            const matchAmount = debouncedAmount
-                ? transfer.amount === parseFloat(debouncedAmount.replace(',', '.'))
+            const matchName = debouncedName
+                ? nameText.toLowerCase().includes(debouncedName.toLowerCase()) ||
+                  docText.includes(debouncedName)
                 : true;
 
-            const matchDate = debouncedDate ? transfer.date.includes(debouncedDate) : true;
+            const matchAmount = debouncedAmount
+                ? transfer?.value === parseFloat(debouncedAmount.replace(',', '.'))
+                : true;
+
+            // La API devuelve la fecha en formato YYYY-MM-DD
+            const matchDate = debouncedDate ? transfer?.date?.includes(debouncedDate) : true;
 
             return matchName && matchAmount && matchDate;
         });
-    }, [transfers, debouncedName, debouncedAmount, debouncedDate]);
+    }, [safeTransfers, debouncedName, debouncedAmount, debouncedDate]);
 
     return {
         filterName,

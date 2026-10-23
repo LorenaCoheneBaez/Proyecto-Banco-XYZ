@@ -1,9 +1,12 @@
-import React, { useLayoutEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { useCallback, useLayoutEffect } from 'react';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useBank } from '../../context/BankContext';
+import { useBalanceCard } from '../../components/BalanceCard/useBalanceCard';
+import {styles} from './HomeScreen.styles'
 import { Ionicons } from '@expo/vector-icons';
 import { globalStyles } from '../../styles/theme.styles';
 import { colors } from '../../styles/colors.styles';
-import { styles } from './HomeScreen.styles';
 import { useHome } from './useHome';
 import { BalanceCard } from '../../components/BalanceCard/BalanceCard';
 import { HomeNavigationProp } from '../../types/navigation.types';
@@ -25,10 +28,21 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         });
     }, [navigation, handleLogout]);
 
+    const { refreshData, isLoading } = useBank();
+
+    useFocusEffect(
+        useCallback(() => {
+            refreshData();
+        }, [])
+    );
+
     return (
         <View style={globalStyles.container}>
-
+            {isLoading ? (
+                <ActivityIndicator size="large" color="#0000ff" />
+            ) : (
             <BalanceCard />
+            )}
 
             <View style={styles.actionsContainer}>
                 <TouchableOpacity

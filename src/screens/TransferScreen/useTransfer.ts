@@ -4,20 +4,22 @@ import { useBank } from '../../context/BankContext';
 import { TransferNavigationProp } from '../../types/navigation.types';
 import { getTodayArg, getTomorrowArg, parseArgDate, isValidArgDate } from '../../utils/date.utils';
 import { normalizeAmountInput, formatCurrencyARS } from '../../utils/currency.utils';
+import { apiService } from '../../services/api.service';
 
 export const useTransfer = (navigation: TransferNavigationProp) => {
-    const { balance, addTransfer } = useBank();
+    const { balance, token, refreshData } = useBank();
 
     const [recipient, setRecipient] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
+    const [currency, setCurrency] = useState<string>('ARS');
 
-    const today = getTodayArg(); // "22/10/2026"
+    const today = getTodayArg();
     const [date, setDate] = useState<string>(getTomorrowArg());
 
     const [isScheduled, setIsScheduled] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    // Borra el error al cambiar el estado del switch
     const handleToggleScheduled = (value: boolean) => {
         setIsScheduled(value);
         setError('');
@@ -27,26 +29,22 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
         setAmount(normalizeAmountInput(text));
     };
 
-    const handleTransfer = () => {
+    const handleTransfer = async () => {
         if (!recipient.trim()) {
-            setError('El destinatario es obligatorio.');
-            return;
+            return setError('El destinatario (Nombre, CBU o Documento) es obligatorio.');
         }
 
         const numericAmount = parseFloat(amount.replace(',', '.'));
 
         if (isNaN(numericAmount) || numericAmount <= 0) {
-            setError('El monto debe ser mayor a 0.');
-            return;
+            return setError('El monto debe ser mayor a 0.');
         }
 
         if (numericAmount > balance) {
-            setError(`Saldo insuficiente. Disponible: ${formatCurrencyARS(balance)}`);
-            return;
+            return setError(`Saldo insuficiente. Disponible: ${formatCurrencyARS(balance)}`);
         }
 
         setError('');
-
         const finalDate = isScheduled ? date : today;
 
         if (isScheduled) {
@@ -57,20 +55,39 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
             const currentDateObj = parseArgDate(today);
 
             if (selectedDateObj <= currentDateObj) {
-                return setError('No puede programar transferencias para hoy, ni fechas pasadas.');
+                return setError('No puede programar transferencias para fechas pasadas.');
             }
         }
 
-        addTransfer({ recipient, amount: numericAmount, date: finalDate });
+        if (!token) return setError('Error de autenticación.');
 
-        const message =
-            finalDate === today
-                ? 'Transferencia realizada con éxito.'
-                : `Transferencia programada para el ${finalDate}.`;
+        setIsLoading(true);
+        try {
+            const [day, month, year] = finalDate.split('/');
+            const apiTransferDate = `${year}-${month}-${day}`;
 
-        Alert.alert('Operación Exitosa', message, [
-            { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+            await apiService.transfer(token, {
+                value: numericAmount,
+                currency: currency,
+                payeerDocument: recipient.trim(),
+                transferDate: apiTransferDate,
+            });
+
+            await refreshData();
+
+            const message =
+                finalDate === today
+                    ? 'Transferencia realizada con éxito.'
+                    : `Transferencia programada para el ${finalDate}.`;
+
+            Alert.alert('Operación Exitosa', message, [
+                { text: 'OK', onPress: () => navigation.goBack() },
+            ]);
+        } catch (err) {
+            setError('Ocurrió un error al procesar la transferencia.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return {
@@ -78,6 +95,8 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
         setRecipient,
         amount,
         setAmount,
+        currency,
+        setCurrency,
         date,
         setDate,
         isScheduled,
@@ -85,5 +104,6 @@ export const useTransfer = (navigation: TransferNavigationProp) => {
         error,
         handleTransfer,
         handleAmountChange,
+        isLoading,
     };
 };
